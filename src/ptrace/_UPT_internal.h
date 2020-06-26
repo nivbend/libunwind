@@ -51,6 +51,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 struct UPT_info
   {
     pid_t pid;          /* the process-id of the child we're unwinding */
+    int procfs_fd;      /* process's /proc/<pid>/ fd (if on different namespace/s) */
     struct elf_dyn_info edi;
   };
 

@@ -29,6 +29,8 @@ void
 _UPT_destroy (void *ptr)
 {
   struct UPT_info *ui = (struct UPT_info *) ptr;
+  if (0 <= ui->procfs_fd)
+    close(ui->procfs_fd);
   invalidate_edi (&ui->edi);
   free (ptr);
 }

@@ -37,10 +37,25 @@ _UPT_create (pid_t pid)
 
   memset (ui, 0, sizeof (*ui));
   ui->pid = pid;
+  ui->procfs_fd = -1;
   ui->edi.di_cache.format = -1;
   ui->edi.di_debug.format = -1;
 #if UNW_TARGET_IA64
   ui->edi.ktab.format = -1;
 #endif
+  return ui;
+}
+
+void *
+_UPT_create_ns (pid_t pid)
+{
+  char procfs_path[PATH_MAX];
+  snprintf (procfs_path, sizeof (procfs_path), "/proc/%d", pid);
+  int procfs_fd = open(procfs_path, O_RDONLY | O_DIRECTORY | O_PATH | O_CLOEXEC);
+  if (0 > procfs_fd)
+    return NULL;
+
+  struct UPT_info *ui = _UPT_create (pid);
+  ui->procfs_fd = procfs_fd;
   return ui;
 }

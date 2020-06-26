@@ -306,19 +306,19 @@ elf_w (get_proc_name_in_image) (unw_addr_space_t as, struct elf_image *ei,
 }
 
 HIDDEN int
-elf_w (get_proc_name) (unw_addr_space_t as, pid_t pid, unw_word_t ip,
-                       char *buf, size_t buf_len, unw_word_t *offp)
+elf_w (get_proc_name) (unw_addr_space_t as, pid_t pid, int procfs_fd,
+                       unw_word_t ip, char *buf, size_t buf_len, unw_word_t *offp)
 {
   unsigned long segbase, mapoff;
   struct elf_image ei;
   int ret;
   char file[PATH_MAX];
 
-  ret = tdep_get_elf_image (&ei, pid, ip, &segbase, &mapoff, file, PATH_MAX);
+  ret = tdep_get_elf_image (&ei, pid, procfs_fd, ip, &segbase, &mapoff, file, PATH_MAX);
   if (ret < 0)
     return ret;
 
-  ret = elf_w (load_debuglink) (file, &ei, 1);
+  ret = elf_w (load_debuglink) (procfs_fd, file, &ei, 1);
   if (ret < 0)
     return ret;
 
@@ -382,7 +382,7 @@ elf_w (find_section) (struct elf_image *ei, const char* secname)
  * ei will be mapped to file or the located .gnu_debuglink from file
  */
 HIDDEN int
-elf_w (load_debuglink) (const char* file, struct elf_image *ei, int is_local)
+elf_w (load_debuglink) (int procfs_fd, const char* file, struct elf_image *ei, int is_local)
 {
   int ret;
   Elf_W (Shdr) *shdr;
@@ -391,7 +391,7 @@ elf_w (load_debuglink) (const char* file, struct elf_image *ei, int is_local)
 
   if (!ei->image)
     {
-      ret = elf_map_image(ei, file);
+      ret = elf_map_image(ei, procfs_fd, file);
       if (ret)
 	return ret;
     }
@@ -441,14 +441,14 @@ elf_w (load_debuglink) (const char* file, struct elf_image *ei, int is_local)
       strcpy (newname, basedir);
       strcat (newname, "/");
       strcat (newname, linkbuf);
-      ret = elf_w (load_debuglink) (newname, ei, -1);
+      ret = elf_w (load_debuglink) (procfs_fd, newname, ei, -1);
 
       if (ret == -1)
 	{
 	  strcpy (newname, basedir);
 	  strcat (newname, "/.debug/");
 	  strcat (newname, linkbuf);
-	  ret = elf_w (load_debuglink) (newname, ei, -1);
+	  ret = elf_w (load_debuglink) (procfs_fd, newname, ei, -1);
 	}
 
       if (ret == -1 && is_local == 1)
@@ -457,7 +457,7 @@ elf_w (load_debuglink) (const char* file, struct elf_image *ei, int is_local)
 	  strcat (newname, basedir);
 	  strcat (newname, "/");
 	  strcat (newname, linkbuf);
-	  ret = elf_w (load_debuglink) (newname, ei, -1);
+	  ret = elf_w (load_debuglink) (procfs_fd, newname, ei, -1);
 	}
 
       if (ret == -1)

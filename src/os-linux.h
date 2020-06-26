@@ -63,16 +63,24 @@ ltoa (char *buf, long val)
 }
 
 static inline int
-maps_init (struct map_iterator *mi, pid_t pid)
+maps_init (struct map_iterator *mi, pid_t pid, int procfs_fd)
 {
   char path[sizeof ("/proc/0123456789/maps")], *cp;
 
-  memcpy (path, "/proc/", 6);
-  cp = ltoa (path + 6, pid);
-  assert (cp + 6 < path + sizeof (path));
-  memcpy (cp, "/maps", 6);
+  if (0 > procfs_fd)
+    {
+      memcpy (path, "/proc/", 6);
+      cp = ltoa (path + 6, pid);
+      assert (cp + 6 < path + sizeof (path));
+      memcpy (cp, "/maps", 6);
 
-  mi->fd = open (path, O_RDONLY);
+      mi->fd = open (path, O_RDONLY);
+    }
+  else
+    {
+      mi->fd = openat (procfs_fd, "maps", O_RDONLY);
+    }
+
   if (mi->fd >= 0)
     {
       /* Try to allocate a page-sized buffer.  */

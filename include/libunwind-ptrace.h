@@ -38,6 +38,7 @@ extern "C" {
    archive library called libunwind-ptrace.a.  */
 
 extern void *_UPT_create (pid_t);
+extern void *_UPT_create_ns (pid_t);
 extern void _UPT_destroy (void *);
 extern int _UPT_find_proc_info (unw_addr_space_t, unw_word_t,
                                 unw_proc_info_t *, int, void *);

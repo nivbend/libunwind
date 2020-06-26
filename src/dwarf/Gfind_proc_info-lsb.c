@@ -450,7 +450,7 @@ dwarf_find_eh_frame_section(struct dl_phdr_info *info)
   Debug (1, "looking for .eh_frame section in %s\n",
          file);
 
-  rc = elf_map_image (&ei, file);
+  rc = elf_map_image (&ei, -1, file);
   if (rc != 0)
     return 0;
 

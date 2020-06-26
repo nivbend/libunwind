@@ -33,7 +33,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "_UPT_internal.h"
 
 static int
-get_unwind_info (struct elf_dyn_info *edi, pid_t pid, unw_addr_space_t as, unw_word_t ip)
+get_unwind_info (struct elf_dyn_info *edi, pid_t pid, int procfs_fd,
+                 unw_addr_space_t as, unw_word_t ip)
 {
   unsigned long segbase, mapoff;
   char path[PATH_MAX];
@@ -58,7 +59,7 @@ get_unwind_info (struct elf_dyn_info *edi, pid_t pid, unw_addr_space_t as, unw_w
 
   invalidate_edi(edi);
 
-  if (tdep_get_elf_image (&edi->ei, pid, ip, &segbase, &mapoff, path,
+  if (tdep_get_elf_image (&edi->ei, pid, procfs_fd, ip, &segbase, &mapoff, path,
                           sizeof(path)) < 0)
     return -UNW_ENOINFO;
 
@@ -96,7 +97,7 @@ _UPT_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
   struct UPT_info *ui = arg;
   int ret = -UNW_ENOINFO;
 
-  if (get_unwind_info (&ui->edi, ui->pid, as, ip) < 0)
+  if (get_unwind_info (&ui->edi, ui->pid, ui->procfs_fd, as, ip) < 0)
     return -UNW_ENOINFO;
 
 #if UNW_TARGET_IA64

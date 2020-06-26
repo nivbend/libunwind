@@ -30,15 +30,15 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "os-linux.h"
 
 int
-tdep_get_elf_image (struct elf_image *ei, pid_t pid, unw_word_t ip,
-                    unsigned long *segbase, unsigned long *mapoff,
-                    char *path, size_t pathlen)
+tdep_get_elf_image (struct elf_image *ei, pid_t pid, int procfs_fd,
+                    unw_word_t ip, unsigned long *segbase,
+                    unsigned long *mapoff, char *path, size_t pathlen)
 {
   struct map_iterator mi;
   int found = 0, rc;
   unsigned long hi;
 
-  if (maps_init (&mi, pid) < 0)
+  if (maps_init (&mi, pid, procfs_fd) < 0)
     return -1;
 
   while (maps_next (&mi, segbase, &hi, mapoff))
@@ -57,7 +57,7 @@ tdep_get_elf_image (struct elf_image *ei, pid_t pid, unw_word_t ip,
     {
       strncpy(path, mi.path, pathlen);
     }
-  rc = elf_map_image (ei, mi.path);
+  rc = elf_map_image (ei, procfs_fd, mi.path);
   maps_close (&mi);
   return rc;
 }

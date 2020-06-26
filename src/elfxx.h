@@ -43,9 +43,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #endif
 
 extern int elf_w (get_proc_name) (unw_addr_space_t as,
-                                  pid_t pid, unw_word_t ip,
-                                  char *buf, size_t len,
-                                  unw_word_t *offp);
+                                  pid_t pid, int procfs_fd,
+                                  unw_word_t ip, char *buf,
+                                  size_t len, unw_word_t *offp);
 
 extern int elf_w (get_proc_name_in_image) (unw_addr_space_t as,
                                            struct elf_image *ei,
@@ -55,7 +55,7 @@ extern int elf_w (get_proc_name_in_image) (unw_addr_space_t as,
                                            char *buf, size_t buf_len, unw_word_t *offp);
 
 extern Elf_W (Shdr)* elf_w (find_section) (struct elf_image *ei, const char* secname);
-extern int elf_w (load_debuglink) (const char* file, struct elf_image *ei, int is_local);
+extern int elf_w (load_debuglink) (int procfs_fd, const char* file, struct elf_image *ei, int is_local);
 
 static inline int
 elf_w (valid_object) (struct elf_image *ei)
@@ -70,14 +70,29 @@ elf_w (valid_object) (struct elf_image *ei)
 }
 
 static inline int
-elf_map_image (struct elf_image *ei, const char *path)
+elf_map_image (struct elf_image *ei, int procfs_fd, const char *path)
 {
   struct stat stat;
-  int fd;
+  int root_fd, fd;
 
-  fd = open (path, O_RDONLY);
+  if (0 > procfs_fd)
+    {
+      fd = open (path, O_RDONLY);
+    }
+  else
+    {
+      root_fd = openat (procfs_fd, "root", O_PATH | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
+      if (root_fd < 0)
+        return -1;
+
+      fd = openat (root_fd, &path[1], O_RDONLY);
+      close(root_fd);
+    }
+
   if (fd < 0)
-    return -1;
+    {
+      return -1;
+    }
 
   if (fstat (fd, &stat) < 0)
     {
